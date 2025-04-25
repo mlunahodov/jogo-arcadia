@@ -1,6 +1,8 @@
 package br.com.fiap.arcadia.controller;
 
 import br.com.fiap.arcadia.model.Item;
+import br.com.fiap.arcadia.model.TipoItem;
+import br.com.fiap.arcadia.model.TipoRaridade;
 import br.com.fiap.arcadia.repository.ItemRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -9,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/itens")
@@ -23,14 +24,29 @@ public class ItemController {
         return repository.findAll();
     }
 
-    @GetMapping("{raridade}")
+    @GetMapping("/raridade/{raridade}")
     public List<Item> getRaridade(@PathVariable String raridade) {
-        return getItemPorRaridade(raridade);
+        try {
+            TipoRaridade raridadeEnum = TipoRaridade.valueOf(raridade.toUpperCase());
+            return getItemPorRaridade(raridadeEnum);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Raridade inválida: " + raridade);
+        }
     }
 
-    @GetMapping("{tipo}")
+    @GetMapping("/tipo/{tipo}")
     public List<Item> getTipo(@PathVariable String tipo) {
-        return getItemPorTipo(tipo);
+        try {
+            TipoItem tipoEnum = TipoItem.valueOf(tipo.toUpperCase());
+            return getItemPorTipo(tipoEnum);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tipo inválido: " + tipo);
+        }
+    }
+
+    @GetMapping("/nome")
+    public List<Item> getParcial(@RequestParam(required = false) String nome) {
+        return getItemPorNomeParcial(nome);
     }
 
     @GetMapping("/minPreco")
@@ -41,11 +57,6 @@ public class ItemController {
     @GetMapping("/maxPreco")
     public Item getMaxPreco() {
         return getItemPorMaxPreco();
-    }
-
-    @GetMapping
-    public List<Item> getParcial(@RequestParam(required = false) String nome) {
-        return getItemPorNomeParcial(nome);
     }
 
     @PostMapping
@@ -74,45 +85,41 @@ public class ItemController {
         return repository.save(itemExistente);
     }
 
+    
+
     private List<Item> getItemPorNomeParcial(String nome) {
         return repository.findByNomeContainingIgnoreCase(nome)
-                .orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Não foi encontrado nenhum item")
-                );
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Nenhum item encontrado com o nome: " + nome));
     }
 
-    private List<Item> getItemPorRaridade(String raridade) {
+    private List<Item> getItemPorRaridade(TipoRaridade raridade) {
         return repository.findByRaridade(raridade)
-                .orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Nenhum item encontrado com a raridade " + raridade)
-                );
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Nenhum item encontrado com a raridade: " + raridade));
     }
 
-    private List<Item> getItemPorTipo(String tipo) {
+    private List<Item> getItemPorTipo(TipoItem tipo) {
         return repository.findByTipo(tipo)
-                .orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Nenhum item encontrado com o tipo " + tipo)
-                );
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Nenhum item encontrado com o tipo: " + tipo));
     }
 
     private Item getItemPorMinPreco() {
         return repository.findFirstByOrderByPrecoAsc()
-                .orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Não foi encontrado nenhum item")
-                );
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Nenhum item encontrado"));
     }
 
     private Item getItemPorMaxPreco() {
         return repository.findFirstByOrderByPrecoDesc()
-                .orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Não foi encontrado nenhum item")
-                );
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Nenhum item encontrado"));
     }
 
     private Item getItem(Long id) {
         return repository.findById(id)
-                .orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND)
-                );
+                .orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Item com id " + id + " não encontrado"));
     }
 }
