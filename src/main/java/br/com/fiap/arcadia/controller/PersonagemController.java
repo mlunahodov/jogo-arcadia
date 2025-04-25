@@ -46,7 +46,12 @@ public class PersonagemController {
 
     @PutMapping("{id}")
     public Personagem update(@PathVariable Long id, @RequestBody Personagem personagem) {
-        personagem.setId(id);
+        Personagem personagemExistente = getPersonagemPorId(id);
+
+        personagemExistente.setNome(personagem.getNome());
+        personagemExistente.setClasse(personagem.getClasse());
+        personagemExistente.setNivel(personagem.getNivel());
+        personagemExistente.setMoedas(personagem.getMoedas());
 
         return repository.save(personagem);
     }

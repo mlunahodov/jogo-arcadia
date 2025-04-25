@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/itens")
@@ -39,7 +40,12 @@ public class ItemController {
 
     @GetMapping("/maxPreco")
     public Item getMaxPreco() {
-        return
+        return getItemPorMaxPreco();
+    }
+
+    @GetMapping
+    public List<Item> getParcial(@RequestParam(required = false) String nome) {
+        return getItemPorNomeParcial(nome);
     }
 
     @PostMapping
@@ -57,9 +63,22 @@ public class ItemController {
 
     @PutMapping("{id}")
     public Item update(@PathVariable Long id, @RequestBody Item item) {
-        item.setId(id);
+        Item itemExistente = getItem(id);
 
-        return repository.save(item);
+        itemExistente.setNome(item.getNome());
+        itemExistente.setDono(item.getDono());
+        itemExistente.setTipo(item.getTipo());
+        itemExistente.setPreco(item.getPreco());
+        itemExistente.setRaridade(item.getRaridade());
+
+        return repository.save(itemExistente);
+    }
+
+    private List<Item> getItemPorNomeParcial(String nome) {
+        return repository.findByNomeContainingIgnoreCase(nome)
+                .orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Não foi encontrado nenhum item")
+                );
     }
 
     private List<Item> getItemPorRaridade(String raridade) {
@@ -77,14 +96,17 @@ public class ItemController {
     }
 
     private Item getItemPorMinPreco() {
-        return repository.findByMinPreco()
+        return repository.findFirstByOrderByPrecoAsc()
                 .orElseThrow(
                         () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Não foi encontrado nenhum item")
                 );
     }
 
     private Item getItemPorMaxPreco() {
-        return repository.findByMaxPreco();
+        return repository.findFirstByOrderByPrecoDesc()
+                .orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Não foi encontrado nenhum item")
+                );
     }
 
     private Item getItem(Long id) {

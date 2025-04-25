@@ -10,10 +10,9 @@ import java.util.Optional;
 public interface ItemRepository extends JpaRepository<Item, Long> {
     Optional<List<Item>> findByRaridade(String raridade);
     Optional<List<Item>> findByTipo(String tipo);
+    Optional<List<Item>> findByNomeContainingIgnoreCase(String nome);
+    Optional<Item> findFirstByOrderByPrecoAsc();
+    Optional<Item> findFirstByOrderByPrecoDesc();
 
-    @Query("SELECT I FROM ITEM I ORDER BY I.PRECO ASC")
-    Optional<Item> findByMinPreco();
 
-    @Query("SELECT I FROM ITEM I ORDER BY I.PRECO DESC")
-    Optional<Item> findByMaxPreco();
 }
